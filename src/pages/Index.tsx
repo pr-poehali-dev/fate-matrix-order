@@ -68,17 +68,65 @@ export default function Index() {
   const [selectedService, setSelectedService] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
   const [bookingDialogOpen, setBookingDialogOpen] = useState(false);
+  const [clientName, setClientName] = useState('');
+  const [clientPhone, setClientPhone] = useState('');
+  const [clientEmail, setClientEmail] = useState('');
+  const [message, setMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const timeSlots = [
     '10:00', '11:30', '13:00', '14:30', '16:00', '17:30', '19:00'
   ];
 
-  const handleBooking = () => {
-    if (selectedDate && selectedService && selectedTime) {
-      alert(`Заявка отправлена! Услуга: ${services.find(s => s.id === selectedService)?.title}, Дата: ${selectedDate.toLocaleDateString('ru-RU')}, Время: ${selectedTime}`);
-      setBookingDialogOpen(false);
-    } else {
-      alert('Пожалуйста, заполните все поля');
+  const handleBooking = async () => {
+    if (!selectedDate || !selectedService || !selectedTime || !clientName || !clientPhone) {
+      alert('Пожалуйста, заполните все обязательные поля');
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const selectedServiceData = services.find(s => s.id === selectedService);
+      const bookingData = {
+        service: selectedServiceData?.title || selectedService,
+        date: selectedDate.toLocaleDateString('ru-RU'),
+        time: selectedTime,
+        clientName,
+        clientPhone,
+        clientEmail,
+        message
+      };
+
+      const response = await fetch('https://functions.poehali.dev/f9388ebe-c74c-40ef-87b5-4fee1d07eb06', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(bookingData)
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        alert('Заявка успешно отправлена! Специалист свяжется с вами в ближайшее время.');
+        setBookingDialogOpen(false);
+        // Reset form
+        setSelectedDate(undefined);
+        setSelectedService('');
+        setSelectedTime('');
+        setClientName('');
+        setClientPhone('');
+        setClientEmail('');
+        setMessage('');
+      } else {
+        throw new Error(result.error || 'Произошла ошибка при отправке заявки');
+      }
+    } catch (error) {
+      console.error('Booking error:', error);
+      alert('Произошла ошибка при отправке заявки. Попробуйте еще раз или свяжитесь с нами напрямую.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -437,12 +485,42 @@ export default function Index() {
           </div>
         </div>
         
+        <div className="space-y-4 mt-6">
+          <h4 className="font-semibold">Ваши контактные данные</h4>
+          <div className="grid md:grid-cols-2 gap-4">
+            <Input 
+              placeholder="Ваше имя *" 
+              value={clientName}
+              onChange={(e) => setClientName(e.target.value)}
+            />
+            <Input 
+              placeholder="Телефон *" 
+              value={clientPhone}
+              onChange={(e) => setClientPhone(e.target.value)}
+            />
+          </div>
+          <Input 
+            type="email"
+            placeholder="Email (необязательно)" 
+            value={clientEmail}
+            onChange={(e) => setClientEmail(e.target.value)}
+          />
+          <Textarea 
+            placeholder="Дополнительное сообщение (необязательно)" 
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+          />
+        </div>
+        
         <div className="flex justify-end space-x-4 mt-6">
           <Button variant="outline" onClick={() => setBookingDialogOpen(false)}>
             Отмена
           </Button>
-          <Button onClick={handleBooking} disabled={!selectedDate || !selectedService || !selectedTime}>
-            Записаться
+          <Button 
+            onClick={handleBooking} 
+            disabled={!selectedDate || !selectedService || !selectedTime || !clientName || !clientPhone || isSubmitting}
+          >
+            {isSubmitting ? 'Отправка...' : 'Записаться'}
           </Button>
         </div>
       </DialogContent>

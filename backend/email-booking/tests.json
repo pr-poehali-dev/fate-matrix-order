@@ -1,0 +1,33 @@
+{
+  "tests": [
+    {
+      "name": "Test booking email submission",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "service": "Базовая матрица судьбы",
+        "date": "2024-10-15",
+        "time": "14:00",
+        "clientName": "Тестовый клиент",
+        "clientPhone": "+7 999 123-45-67",
+        "clientEmail": "test@example.com",
+        "message": "Тестовое сообщение"
+      },
+      "expectedStatus": 200,
+      "expectedBody": {
+        "success": true,
+        "message": "string",
+        "requestId": "string"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Test OPTIONS request for CORS",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200,
+      "expectedBody": "",
+      "bodyMatcher": "exact"
+    }
+  ]
+}
